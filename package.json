@@ -1,19 +1,23 @@
 {
 	"name": "challenge-rest-api",
 	"version": "1.0.0",
-	"main": "src/index.js",
+	"main": "index.js",
 	"scripts": {
-		"lint": "eslint src/index.js",
-		"start": "babel-node src/index.js",
-		"test": "jest",
-		"watch": "nodemon --exec babel-node --watch src/index.js",
-		"watch-test": "jest --watch"
+		"lint": "eslint index.js",
+		"start": "babel-node index.js",
+		"test": "env NODEENV=test jest --runInBand ",
+		"watch": "nodemon --exec npm start",
+		"watch-test": "nodemon --exec npm run test",
+		"pretest": "env NODEENV=test babel-node src/tests/pretest/pretestScript.js"
 	},
 	"license": "MIT",
 	"dependencies": {
+		"graphql": "^14.6.0",
+		"graphql-request": "^1.8.2",
 		"koa": "^2.11.0",
 		"koa-bodyparser": "^4.2.1",
 		"koa-router": "^8.0.6",
+		"supertest": "^4.0.2",
 		"uuid": "^3.4.0"
 	},
 	"devDependencies": {
@@ -29,6 +33,6 @@
 		"testEnvironment": "node",
 		"testPathIgnorePatterns": [
 			"<rootDir>/node_modules"
-	]
+		]
 	}
 }

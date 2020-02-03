@@ -1,19 +1,7 @@
-import Koa from 'koa'
-import Router from 'koa-router'
-import bodyParser from 'koa-bodyparser'
+const Koa = require("koa");
+const app = new Koa();
 
-const app = new Koa()
-const PORT = process.env.PORT || 1337
-const router = new Router()
+require("../src/routes/machine_model_routes")(app);
+require("../src/routes/pricing_model_routes")(app);
 
-router
-  .use(bodyParser())
-  .get('/', (ctx, next) => {
-    ctx.body = 'hello world'
-  })
-
-app
-  .use(router.routes())
-  .listen(PORT, () =>
-    console.log(`Server listening on port ${PORT}`)
-  )
+module.exports = app;
