@@ -17,8 +17,9 @@ function register(app) {
 	router
 		.use(bodyParser())
 		.get("/",async (ctx, next) => {
-			ctx.body = "hello world";
-			await getPriceModelListQuery();
+			let res = "hello world"
+			ctx.body = res;
+			return res;
 		})
 		.get("/pricing-models", async (ctx, next) => {
 			let { rows } = await getPriceModelListQuery();
