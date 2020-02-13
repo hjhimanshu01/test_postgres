@@ -1,25 +1,32 @@
-import graphQlClient from "../helpers/graphQlClient";
+import postgresQLClient from "../helpers/dbQuery";
 
 import {
 	removePricingModelFromMachine,
 	updatePricingModelOfMachine,
 	getPriceConfigForMachine,
-	removePricingModelFromMachineTest
+	removePricingModelFromMachineTest,
+	checkIfMachineIdPresent
 } from "../queries/machine_model_queries";
 
 export function removePricingModelFromMachineQuery(variables) {
-	return graphQlClient.request(removePricingModelFromMachine, variables);
+	return postgresQLClient.request(removePricingModelFromMachine, variables);
 }
 
 export function updatePricingModelOfMachineQuery(variables) {
-	return graphQlClient.request(updatePricingModelOfMachine, variables);
+	return postgresQLClient.request(updatePricingModelOfMachine, variables);
 }
 
 export function getPriceConfigForMachineQuery(variables) {
-	return graphQlClient.request(getPriceConfigForMachine, variables);
+	return postgresQLClient.request(getPriceConfigForMachine, variables);
 }
 
+export function checkIfMachineIdPresentQuery(variables) {
+	return postgresQLClient.request(checkIfMachineIdPresent, variables);
+}
 // removePricingModelFromMachineTest permanently removes the pricing model, should be used only in tests
 export function removePricingModelFromMachineTestQuery(variables) {
-	return graphQlClient.request(removePricingModelFromMachineTest, variables);
+	return postgresQLClient.request(
+		removePricingModelFromMachineTest,
+		variables
+	);
 }

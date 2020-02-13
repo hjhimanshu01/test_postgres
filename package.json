@@ -8,15 +8,16 @@
 		"test": "env NODEENV=test jest --runInBand ",
 		"watch": "nodemon --exec npm start",
 		"watch-test": "nodemon --exec npm run test",
-		"pretest": "env NODEENV=test babel-node src/tests/pretest/pretestScript.js"
+		"pretest": "env NODEENV=test babel-node src/tests/pretest/pretestScript.js",
+		"posttest": "env NODEENV=test babel-node src/tests/posttest/posttestScript.js"
 	},
 	"license": "MIT",
 	"dependencies": {
-		"graphql": "^14.6.0",
-		"graphql-request": "^1.8.2",
+		"dotenv": "^8.2.0",
 		"koa": "^2.11.0",
 		"koa-bodyparser": "^4.2.1",
 		"koa-router": "^8.0.6",
+		"pg": "^7.18.1",
 		"supertest": "^4.0.2",
 		"uuid": "^3.4.0"
 	},

@@ -1,7 +1,6 @@
 var Router = require("koa-router");
 import bodyParser from "koa-bodyparser";
-//importing GraphQL client
-import client from "../helpers/graphQlClient";
+
 import {
 	getPriceModelListQuery,
 	insertPricingModelQuery,
@@ -17,78 +16,63 @@ function register(app) {
 	let router = new Router();
 	router
 		.use(bodyParser())
-		.get("/", (ctx, next) => {
+		.get("/",async (ctx, next) => {
 			ctx.body = "hello world";
+			await getPriceModelListQuery();
 		})
 		.get("/pricing-models", async (ctx, next) => {
-			let req = await getPriceModelListQuery();
-			ctx.body = req;
-			return req;
+			let { rows } = await getPriceModelListQuery();
+			ctx.body = rows;
+			return rows;
 		})
 
 		.post("/pricing-models", async (ctx, next) => {
-			let req = await insertPricingModelQuery({
-				pricingModels: ctx.request.body.pricingModels
-			});
-			ctx.body = req;
-			return req;
+			let { rows } = await insertPricingModelQuery([
+				ctx.request.body.pricingModels.id,
+				ctx.request.body.pricingModels.name
+			]);
+			ctx.body = rows;
+			return rows;
 		})
 
 		.get("/pricing-models/:pmId", async (ctx, next) => {
-			let req = await getPricingModelByIdQuery({
-				id: ctx.params["pmId"]
-			});
-			ctx.body = req.pricing_models.length > 0 ? req : "Not Found";
-			return req;
+			let { rows } = await getPricingModelByIdQuery([ctx.params["pmId"]]);
+			ctx.body = rows.length > 0 ? rows : "Not Found";
+			return rows;
 		})
 
 		.put("/pricing-models/:pmId", async (ctx, next) => {
-			let req = await editPriceModelByIdQuery({
-				id: ctx.params["pmId"],
-				pricingModels: ctx.request.body.pricingModels
-			});
-			ctx.body = req;
-			return req;
+			let { rows } = await editPriceModelByIdQuery([
+				ctx.params["pmId"],
+				ctx.request.body.pricingModels.id,
+				ctx.request.body.pricingModels.name
+			]);
+			ctx.body = rows;
+			return rows;
 		})
 
 		.get("/pricing-models/:pmId/prices", async (ctx, next) => {
-			let req = await getPricesByModelIdQuery({
-				id: ctx.params["pmId"]
-			});
-			ctx.body = req;
-			return req;
+			let { rows } = await getPricesByModelIdQuery([ctx.params["pmId"]]);
+			ctx.body = rows;
+			return rows;
 		})
 
 		.post("/pricing-models/:pmId/prices", async (ctx, next) => {
 			let pmId = ctx.params["pmId"];
-			let priceObjUpdated = {
-				...ctx.request.body.price,
-				deleted_at: null,
-				pricing_model_prices: {
-					data: {
-						pricing_model_id: pmId,
-						deleted_at: null
-					}
-				}
-			};
+			let priceId = ctx.request.body.price_id;
 
-			let req = await addNewPriceConfigByIdQUery({
-				price: priceObjUpdated
-			});
-			ctx.body = req;
-			return req;
+			let { rows } = await addNewPriceConfigByIdQUery([pmId, priceId]);
+			ctx.body = rows;
+			return rows;
 		})
 
 		.delete("/pricing-models/:pmId/prices/:priceId", async (ctx, next) => {
-			let req = await deletePriceConfigFromModelQuery({
-				modelId: ctx.params["pmId"],
-				priceId: ctx.params["priceId"]
-			});
-			ctx.body =
-				req.update_pricing_model_price.returning.length > 0
-					? req
-					: "Not Found";
-			return req;
+			let { rows } = await deletePriceConfigFromModelQuery([
+				ctx.params["pmId"],
+				ctx.params["priceId"]
+			]);
+			ctx.body = rows.length > 0 ? rows : "Not Found";
+			return rows;
 		});
 	app.use(router.routes());
 	app.use(router.allowedMethods());

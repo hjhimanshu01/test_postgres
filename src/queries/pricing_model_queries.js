@@ -1,144 +1,98 @@
 export const pricingModelList = `
-	query {
-		pricing_models(where: { deleted_at: { _eq: null } }) {
-			name
-			pricing_model_prices(where: { deleted_at: { _eq: null } }) {
-				price {
-					name
-					value
-					price
-				}
-			}
-		}
-	}
+
+  SELECT pricing_models.id, pricing_models.name AS pricing_model_name  
+  FROM pricing_models 
+  WHERE pricing_models.deleted_at is NULL
 `;
 
-export const insertPricingModel = `mutation addPricingModels($pricingModels: [pricing_models_insert_input!]!) {
-  insert_pricing_models(objects: $pricingModels) {
-    returning {
-      id
-    }
-  }
-}`;
+export const insertPricingModel = `
+INSERT INTO pricing_models
+VALUES(COALESCE($1 :: uuid, uuid_generate_v1()), $2 :: varchar)
+RETURNING pricing_models.id, pricing_models.name
+`;
 
-export const getPricingModelById = `query getPricingModelsById($id: uuid){
-  pricing_models(where: {id:{_eq: $id}}){
-    id
-    name
-    pricing_model_prices{
-      price{
-        name
-        price
-        value
-      }
-    }
-  }
-}`;
+export const getPricingModelById = `
+  SELECT pm.name AS pricing_model_name,
+  prices.name AS price_name,
+  prices.price,
+  prices.value
+  FROM pricing_models AS pm
+  LEFT JOIN pricing_model_price AS pmp
+  ON pm.id = pmp.pricing_model_id
+  JOIN prices
+  ON prices.id = pmp.price_id
+  WHERE pm.id = $1 :: uuid AND pm.deleted_at is NULL AND prices.deleted_at is NULL
+  ORDER BY pricing_model_name
+  `;
 
-export const editPriceModelById = `mutation updatePricingModels($id: uuid, $pricingModels: pricing_models_set_input) {
-  update_pricing_models(
-    where: {
-      id: {
-        _eq: $id
-      }
-    },
-    _set: $pricingModels
-  ) {
-    returning {
-      id
-      name
-    }
-  }
-}`;
+export const editPriceModelById = `
+UPDATE pricing_models SET 
+    name = COALESCE($3 :: varchar, name),
+    id = COALESCE($2 :: uuid, id),
+    deleted_at = null,
+    updated_at = current_timestamp
+WHERE id = $1 :: uuid
+AND  ($3 IS DISTINCT FROM name 
+        OR $2 IS DISTINCT FROM id)
+RETURNING id, name;
+`;
 
-export const getPricesByModelId = `query getPricingModelsById($id: uuid){
-  pricing_models(where: {id:{_eq: $id}}){
-   
-    pricing_model_prices{
-      price{
-        name
-        price
-        value
-      }
-    }
-  }
-}`;
+export const getPricesByModelId = `
+  SELECT prices.name AS price_name,
+  prices.price,
+  prices.value
+  FROM pricing_models AS pm
+  LEFT JOIN pricing_model_price AS pmp
+  ON pm.id = pmp.pricing_model_id
+  JOIN prices
+  ON prices.id = pmp.price_id
+  WHERE pm.id = $1 :: uuid 
+  AND pm.deleted_at is NULL 
+  AND prices.deleted_at is NULL 
+  AND pmp.deleted_at is NULL
+  ORDER BY pm.name
+  `;
 
-export const addNewPriceConfigById = `mutation addPriceToModel($price: [prices_insert_input!]!) {
-  insert_prices(
-    objects: $price
-    on_conflict: {
-      constraint: prices_name_key,
-      update_columns: [value, price, deleted_at]
-    }
-  ) {
-    returning {
-      id,
-      name
-      pricing_model_prices{
-        pricing_model{
-          name
-        }
-      }
-    }
-  }
-}
+export const addNewPriceConfigById = `
+INSERT into pricing_model_price(pricing_model_id, price_id) 
+    VALUES($1 :: uuid, $2 :: uuid)
+ON CONFLICT ON CONSTRAINT pricing_model_price_pricing_model_id_price_id_key DO UPDATE SET deleted_at = null
+RETURNING pricing_model_id, price_id;
 `;
 
 export const deletePriceConfigFromModel = `
-mutation removePricingConfiguration($modelId: uuid, $priceId: uuid){
-  update_pricing_model_price(
-    where: {
-      pricing_model_id: {
-        _eq: $modelId
-      }
-      price_id: {
-        _eq: $priceId
-      
-      }
-    }
-    _set:{
-      deleted_at: "now()"
-    }
-  ){
-    returning {
-    id
-  }
-  }
-}
+UPDATE pricing_model_price 
+SET deleted_at = least(deleted_at, current_timestamp)
+WHERE pricing_model_id = $1 :: uuid AND price_id = $2 :: uuid
+RETURNING pricing_model_id, price_id;
 `;
 
-export const getPricesByModelName = `query getPrice($name: String) { 
-  pricing_models(where: {name: {_eq: $name}}){
-    name
-    pricing_model_prices{
-      price{
-        name
-        price
-        value
-      }
-    }
-  }
-}
+export const getPricesByModelName = `
+SELECT prices.name AS price_name,
+  prices.price,
+  prices.value
+  FROM pricing_models AS pm
+  LEFT JOIN pricing_model_price AS pmp
+  ON pm.id = pmp.pricing_model_id
+  JOIN prices
+  ON prices.id = pmp.price_id
+	  WHERE pm.name = $1 :: varchar
+  AND pm.deleted_at is NULL 
+  AND prices.deleted_at is NULL 
+  AND pmp.deleted_at is NULL
+  ORDER BY pm.name
 `;
 // delete pricingModelsById to be only used in scripts for testing database
 
-export const deletePricingModelByid = `mutation deletePricingModelByid($id: uuid) {
-  delete_pricing_models(where: {id: {_eq: $id}}) {
-    returning {
-      id
-    }
-  }
-}
+export const deletePricingModelByid = `DELETE FROM pricing_models
+WHERE pricing_models.id = $1
+RETURNING pricing_models.id
 `;
 
 // deletePricingModelPriceByPriceid to be only used in scripts for testing database
 
-export const deletePricingModelPriceByPriceid = ` mutation deletePricingModelPriceById($id: uuid, $priceId: uuid) {
-  delete_pricing_model_price(where: {pricing_model_id: {_eq: $id}, price_id: {_eq: $priceId}}) {
-    returning {
-      id
-    }
-  }
-}
+export const deletePricingModelPriceByPriceid = `
+DELETE FROM pricing_model_price
+WHERE pricing_model_id = $1
+AND price_id = $2
 `;
